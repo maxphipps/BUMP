@@ -1,0 +1,73 @@
+
+BUMP 
+Created by Maximillian J. S. Phipps, 2017
+
+
+__Overview__
+
+Please note that this code is currently under development and should not be used for 
+production grade calculations.
+
+This is the python based, embarrassingly parallel nudged elastic band interface for ONETEP
+intended for use on HPC platforms.
+
+The main driver for setting up, submitting and analysing the ONETEP input files is the neb.py 
+python script.  Please refer directly to this script for a detailed overview of its usage.
+
+
+__Key files__
+
+The following files are called directly by the user:
+
+- neb.py               (Python 2.7 script) 
+  Called to prepare and analyse the replica images.
+
+- run_neb.sh           (Bash script) 
+  Called to submit parallel ONETEP NEB replica jobs on PBS based HPC platforms.
+
+- sub_neb_endpoints.sh (PBS Submission script) 
+  An reactant and product singlepoint energy submission script.
+
+The following files are backend scripts:
+
+- neb_xyz2dat.py       (Python 2.7 script) 
+  Used by neb.py
+
+- sub_neb_iteration.sh (PBS Submission script) 
+  Used by run_neb.sh.
+
+- sub_neb_forces.sh    (PBS Submission script) 
+  Used by run_neb.sh.
+
+
+__Limitations__
+
+This interface is currently very limited as it has been so far intended for a very
+particular usage by myself.  A non-exhaustive list follows:
+
+- Only the PBS scheduler is currently supported.
+- Cell sizes are currently determined by cell_ref.  It is up to the user to ensure this is correctly
+  set, and that the input reactant/product geometries provided are in agreement with these cell sizes.
+- The pseudopotentials are currently fixed to use carbon, hydrogen and oxygen.  This may be updated for
+  the user's system by modifying the appropriate code in neb_xyz2dat.py (see the earlier template lines).
+- It is my intention to implement a climbing image method as an option in this code.
+
+
+__TODO__
+Below is a list of TODOs:
+
+Urgent:
+- Automated ONETEP input file template generation.
+- Convergence criteria for the optimisation.
+- Automatic setting of ONETEP parameters such as XC functional, energy cutoff, cell parameters.  
+  Currently these are fixed to use the PBE0 functional and a 600eV energy cutoff within neb_xyz2dat.py.
+- Automatic determination of cell size from the user's geometries (to remove cell_ref requirement)
+- Clean up of recpot usage.  Currently the user must directly mess with neb_xyz2dat.py to set 
+  their pseudopotential files, which is not pretty.
+
+Important:
+- MOAB/Torque/PBS submission script template creation and cleanup.
+- Improve handling of ONETEP errors.  If things go wrong during a ONETEP calculation, this script's
+  behaviour can easily turn weird.
+
+
