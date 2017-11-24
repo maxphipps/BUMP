@@ -17,7 +17,7 @@ python script.  Please refer directly to this script for a detailed overview of 
 
 __Key files__
 
-The following files are called directly by the user:
+The following scripts are called directly by the user:
 
 - neb.py               (Python 2.7 script) 
   Called to prepare and analyse the replica images.
@@ -26,7 +26,7 @@ The following files are called directly by the user:
   Called to submit parallel ONETEP NEB replica jobs on PBS based HPC platforms.
 
 - sub_neb_endpoints.sh (PBS Submission script) 
-  An reactant and product singlepoint energy submission script.
+  A reactant and product singlepoint energy submission script.
 
 The following files are backend scripts:
 

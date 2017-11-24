@@ -254,7 +254,7 @@ mode_plot = 2
 mode_xyz = 3
 
 # number of replicas
-glob_nim = 6
+glob_nim = 21
 
 MODE = -999
 if ('-init' in sys.argv[1:]):
