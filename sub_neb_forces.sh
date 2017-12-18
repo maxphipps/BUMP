@@ -6,30 +6,11 @@
 #PBS -o logs/log_NEB_forces
 
 ##########################
-#dirs=(
-#im_0.00
-#im_0.05
-#im_0.10
-#im_0.15
-#im_0.20
-#im_0.25
-#im_0.30
-#im_0.35
-#im_0.40
-#im_0.45
-#im_0.50
-#im_0.55
-#im_0.60
-#im_0.65
-#im_0.70
-#im_0.75
-#im_0.80
-#im_0.85
-#im_0.90
-#im_0.95
-#im_1.00
-#)
-dirs=( $(find -maxdepth 1 -type d  -name "im_*" -printf '%P\n' ) )
+dirs=(
+im_0.00
+im_1.00
+)
+#dirs=( $(find -maxdepth 1 -type d  -name "im_*" -printf '%P\n' ) )
 
 ####PBS -t 1-${#dirs[@]}
 ##########################

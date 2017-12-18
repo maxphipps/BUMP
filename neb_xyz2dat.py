@@ -70,7 +70,15 @@ O   '../hpc_files/o-optgga1.recpot'\n\
 BOHR2ANG = 0.529
 NGWF_RADII = 7. * BOHR2ANG
 
-nat = 0
+
+from neb_classes import XYZ
+#class XYZ:
+#  '''XYZ data class: struct'''
+#
+#  def __init__(self):
+#    self.at = None
+#    self.xyz = None
+#    self.nat = None
 
 
 def mean(arr):
@@ -85,9 +93,9 @@ def secondLargest(arr):
 # TODO:
 def getXYZdata(filename):
   global nat
-  """ returns filename's xyz data as atdat and xyzdat arrays.
+  ''' returns filename's xyz data as atdat and xyzdat arrays.
   (returns the final xyz data if more than one xyz structure is present 
-  in the file.) """
+  in the file.) '''
 
   # read lines to list
   with open(filename) as f:
@@ -114,33 +122,16 @@ def getXYZdata(filename):
     atdat[ii] = at
     ii += 1
 
-  return [atdat,xyzdat]
-
-#def getXYZdata(filename):
-#  """ Returns filename's XYZ data as atdat and xyzdat arrays """
-#  f = open(filename, 'r')
-#  # Read number of lines
-#  nat = int(f.readline())
-#  comment = f.readline()
-#  # Init xyz data
-#  xyzdat = [[0.0,0.0,0.0]]*nat
-#  atdat = ['']*nat
-#  # Read xyz data
-#  for ii in range(nat):
-#    [at,x,y,z] = f.readline().split()
-#    xyzdat[ii] = [float(x),float(y),float(z)]
-#    atdat[ii] = at
-#  f.close()
-#  return [atdat,xyzdat]
+  return [atdat,xyzdat,nat]
 
 
-def centerXYZ(xyz,cellParams):
+def centerXYZ(dat,cellParams):
   # Translates the xyz to the cell center
   # Calc. current center of xyz
   cent_xyz = [0.0]*3
-  cent_xyz[0] = mean( [xyz[-1][ii][0] for ii in range(nat)] )
-  cent_xyz[1] = mean( [xyz[-1][ii][1] for ii in range(nat)] )
-  cent_xyz[2] = mean( [xyz[-1][ii][2] for ii in range(nat)] )
+  cent_xyz[0] = mean( [dat.xyz[-1][ii][0] for ii in range(dat.nat)] )
+  cent_xyz[1] = mean( [dat.xyz[-1][ii][1] for ii in range(dat.nat)] )
+  cent_xyz[2] = mean( [dat.xyz[-1][ii][2] for ii in range(dat.nat)] )
 
   # Calc. cell center
   cent_cell = [0.0]*3
@@ -149,23 +140,23 @@ def centerXYZ(xyz,cellParams):
   cent_cell[2] = cellParams[2]/2.
 
   # Apply translation vector
-  for ii in range(nat):
-    xyz[-1][ii][0] += (cent_cell[0] - cent_xyz[0])
-    xyz[-1][ii][1] += (cent_cell[1] - cent_xyz[1])
-    xyz[-1][ii][2] += (cent_cell[2] - cent_xyz[2])
+  for ii in range(dat.nat):
+    dat.xyz[-1][ii][0] += (cent_cell[0] - cent_xyz[0])
+    dat.xyz[-1][ii][1] += (cent_cell[1] - cent_xyz[1])
+    dat.xyz[-1][ii][2] += (cent_cell[2] - cent_xyz[2])
 
-  return xyz
+  return dat.xyz
 
-def getCellParams(xyz,molSize):
+def getCellParams(dat,molSize):
   # Calculates the cell parameters
   # Calculate maximum distance between atoms (brute force)
   Rmax = 0.0
-  for ii in range(nat):
-    for ij in range(ii+1,nat):
+  for ii in range(dat.nat):
+    for ij in range(ii+1,dat.nat):
       Rtest = ( \
-        ( xyz[-1][ii][0] - xyz[-1][ij][0])**2. + \
-        ( xyz[-1][ii][1] - xyz[-1][ij][1])**2. + \
-        ( xyz[-1][ii][2] - xyz[-1][ij][2])**2. )**0.5
+        ( dat.xyz[-1][ii][0] - dat.xyz[-1][ij][0])**2. + \
+        ( dat.xyz[-1][ii][1] - dat.xyz[-1][ij][1])**2. + \
+        ( dat.xyz[-1][ii][2] - dat.xyz[-1][ij][2])**2. )**0.5
       if (Rtest > Rmax): Rmax = Rtest
 
   margin = Rmax + NGWF_RADII*2.
@@ -175,29 +166,35 @@ def getCellParams(xyz,molSize):
 
   return [xmax,ymax,zmax]
 
-def calcMolSize(xyz):
-  xSize = (max( [xyz[-1][ii][0] for ii in range(nat)] ) \
-     - min( [xyz[-1][ii][0] for ii in range(nat)] ))
-  ySize = (max( [xyz[-1][ii][1] for ii in range(nat)] ) \
-     - min( [xyz[-1][ii][1] for ii in range(nat)] ))
-  zSize = (max( [xyz[-1][ii][2] for ii in range(nat)] ) \
-     - min( [xyz[-1][ii][2] for ii in range(nat)] ))
+def calcMolSize(dat):
+  xSize = (max( [dat.xyz[-1][ii][0] for ii in range(dat.nat)] ) \
+     - min( [dat.xyz[-1][ii][0] for ii in range(dat.nat)] ))
+  ySize = (max( [dat.xyz[-1][ii][1] for ii in range(dat.nat)] ) \
+     - min( [dat.xyz[-1][ii][1] for ii in range(dat.nat)] ))
+  zSize = (max( [dat.xyz[-1][ii][2] for ii in range(dat.nat)] ) \
+     - min( [dat.xyz[-1][ii][2] for ii in range(dat.nat)] ))
   return [xSize,ySize,zSize]
 
 def fromXYZ(fnameIn,fnameOut):
-  xyzdata = getXYZdata(fnameIn)
+  # Read xyz file
+  # Parse to XYZ object
+  # Use fromdata() method with XYZ object to create dat file
+  xyzobj = getXYZdata(fnameIn)
 
-  at = xyzdata[0]
-  xyz = xyzdata[1]
+  fromdata(xyzobj,fnameOut)
 
-  molSize = calcMolSize(xyz)
+def fromdata(xyzobj,fnameOut):
+  # Use XYZ data to create dat file
 
-  #centerXYZ(xyz)
+  #print xyzobj.xyz
+  molSize = calcMolSize(xyzobj)
+
+  #centerXYZ(xyzobj)
 
   # Read cellline from cell_ref.dat file
   #cellline = read_cellref()
   # Infer cellline from xyz data
-  cellParams = getCellParams(xyz,molSize)
+  cellParams = getCellParams(xyzobj,molSize)
 
   xmax = cellParams[0]
   ymax = cellParams[1]
@@ -208,7 +205,7 @@ def fromXYZ(fnameIn,fnameOut):
     '0.00  0.00  '+str(zmax)+'\n']
   
   # Center the xyz in the cell
-  xyz = centerXYZ(xyz,cellParams)
+  xyz = centerXYZ(xyzobj,cellParams)
 
   # Calculate coulomb_cutoff_radius
   # = the maximum diameter of the molecule,
@@ -221,31 +218,27 @@ def fromXYZ(fnameIn,fnameOut):
     + NGWF_RADII*2. \
     + BOHR2ANG*2.
 
-  main(at,xyz,cellline,coulomb_cutoff_radius,fnameOut)
+  main(xyzobj,cellline,coulomb_cutoff_radius,fnameOut)
 
 
-def read_cellref():
-  # Read ONETEP cell reference data
-  fInCell = open('cell_ref.dat','r')
-  cellline = ['']*3
-  null = fInCell.readline()
-  cellline[0] = fInCell.readline()
-  cellline[1] = fInCell.readline()
-  cellline[2] = fInCell.readline()
-  fInCell.close()
-
-  return cellline
+#def read_cellref():
+#  # Read ONETEP cell reference data
+#  fInCell = open('cell_ref.dat','r')
+#  cellline = ['']*3
+#  null = fInCell.readline()
+#  cellline[0] = fInCell.readline()
+#  cellline[1] = fInCell.readline()
+#  cellline[2] = fInCell.readline()
+#  fInCell.close()
+#
+#  return cellline
   
   
 
-#def fromdata(at,xyz,fnameOut):
-#  main(at,xyz,fnameOut)
-
-
-def main(at,xyz,cellline,coulomb_cutoff_radius,fnameOut):
+def main(xyzobj,cellline,coulomb_cutoff_radius,fnameOut):
 
   #################################################################
-  
+
   # Writeout the dat file
   fOut = open(fnameOut,'w')
   
@@ -267,8 +260,8 @@ def main(at,xyz,cellline,coulomb_cutoff_radius,fnameOut):
   fOut.write(datlines2)
   
   # Write geometry lines
-  for ii in range(nat):
-    fOut.write( '{}   {:4f}   {:4f}   {:4f}\n'.format( at[ii], xyz[-1][ii][0], xyz[-1][ii][1], xyz[-1][ii][2] ) )
+  for ii in range(xyzobj.nat):
+    fOut.write( '{}   {:4f}   {:4f}   {:4f}\n'.format( xyzobj.at[ii], xyzobj.xyz[-1][ii][0], xyzobj.xyz[-1][ii][1], xyzobj.xyz[-1][ii][2] ) )
   
   # Dump template lines
   fOut.write(datlines3)

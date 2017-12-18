@@ -33,6 +33,9 @@ The following files are backend scripts:
 - neb_xyz2dat.py       (Python 2.7 script) 
   Used by neb.py
 
+- neb_classes.py       (Python 2.7 script)
+  Used by neb.py
+
 - sub_neb_iteration.sh (PBS Submission script) 
   Used by run_neb.sh.
 

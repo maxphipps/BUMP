@@ -93,7 +93,17 @@ from math import floor
 
 import neb_xyz2dat
 import neb_getForces
+from neb_classes import XYZ
 
+# Debug flags
+NO_FORWARD_X = True
+
+# Plot all or final path(s)
+PLOT_ALL = False 
+#PLOT_ALL = True
+
+# Energy in kJ/mol or kcal/mol
+EinkJ = True
 
 # Local pointer to submission scripts and recpot files:
 hpc_files_dir='hpc_files'
@@ -101,81 +111,15 @@ hpc_files_dir='hpc_files'
 # Lambda for steepest descent
 lambdaval = 0.5
 
-
-class xyz:
-  """XYZ data class"""
-
-  def __init__(self, atdat=[], xyzdat=[], coord=0):
-    self.at = atdat
-    self.xyz = xyzdat
-    # set meta data
-    # number of atoms
-    self.nat = len(self.xyz[0])
-    # replica energy pathway coordinate
-    self.coord = '{:3.2f}'.format( coord )
-    # construct filename for this replica
-    self.datdir =      'im_'+self.coord
-    self.filenamexyz = 'im_'+self.coord+'_init.xyz'
-    self.filenamedat = self.datdir+\
-                       '/im_'+self.coord+'.dat'
-    self.filenameout = self.datdir+\
-                       '/onetep.out'
-
-    # make directory for running onetep files
-    self.makedatdir()
-
-  def makedatdir(self):
-    try:
-      os.stat(self.datdir)
-    except:
-      os.mkdir(self.datdir) 
-
-  @classmethod
-  def coord2str( self, coord ):
-    # Parses coord float to string
-    coordstr = '{:3.2f}'.format( coord )
-    return 'im_'+coordstr
-
-  @classmethod
-  def fromdata(self, atdat, xyzdat, coord):
-    # from xyz data:
-    return xyz(atdat, xyzdat, coord)
-
-  @classmethod
-  def fromXYZ(self, filename, coord):
-    # from file:
-    [atdat,xyzdat] = getXYZdata(filename)
-    return xyz(atdat, xyzdat, coord)
-
-  def applyforces(self,forces):
-    for ii in range(self.nat):
-      #print self.xyz[ii][0]
-      self.xyz[-1][ii][0] += forces[ii][0]
-      self.xyz[-1][ii][1] += forces[ii][1]
-      self.xyz[-1][ii][2] += forces[ii][2]
-      #print self.xyz[ii][0]
-
-  def writeXYZ(self, ixyz=-1, appendfile=False, filename=None):
-    print 'writing replica at pathway coordinate ',str(self.coord), \
-        ' to file ', self.filenamexyz
-    # Get filename from argument, else use default filename 
-    filename = filename or self.filenamexyz
-    if (appendfile):
-      f = open(filename, 'a')
-    else:
-      f = open(filename, 'w')
-    # header: number of atoms and comment line:
-    f.write(str(glob_nat)+'\n\n')
-    # xyz data:
-    for ii in range(self.nat):
-      f.write( '{}  {:4f}  {:4f}  {:4f}\n'.format( self.at[ii], self.xyz[ixyz][ii][0], self.xyz[ixyz][ii][1], self.xyz[ixyz][ii][2] ) )
-    f.close()
-
+def XYZfromxyzfile(filename, coord):
+  ''' XYZ object from xyz file '''
+  [atdat,xyzdat] = getXYZdata(filename)
+  return XYZ(atdat, xyzdat, coord)
 
 def getXYZdata(filename):
-  """ returns filename's xyz data as atdat and xyzdat arrays.
+  ''' returns filename's xyz data as atdat and xyzdat arrays.
   (returns the final xyz data if more than one xyz structure is present 
-  in the file.) """
+  in the file.) '''
 
   # read lines to list
   with open(filename) as f:
@@ -184,7 +128,7 @@ def getXYZdata(filename):
   # find number of XYZ structure entries in the file
   nat = int(lines[0])
   nentries = int(floor( float(len(lines))/float(nat+2) ))
-  print 'Reading in structures up to final entry number ',str(nentries)
+  print filename, '-> Reading in structures up to final entry number ',str(nentries)
 
   # init xyz data
   xyzdat = [[None]*nat for i in xrange(nentries)]
@@ -207,7 +151,7 @@ def getXYZdata(filename):
   return [atdat,xyzdat]
 
 def rmsdist(im1,im2,ixyz1,ixyz2):
-  """ returns rms distance between two replicas """
+  ''' returns rms distance between two replicas '''
   sqdist = [0.0]*glob_nat
   # calculate atom pair square distances (same atom indices only)
   for ii in range(glob_nat):
@@ -254,7 +198,7 @@ mode_plot = 2
 mode_xyz = 3
 
 # number of replicas
-glob_nim = 21
+glob_nim = 6
 
 MODE = -999
 if ('-init' in sys.argv[1:]):
@@ -278,8 +222,8 @@ if (MODE == mode_initialise):
   replicas by linear interpolation from reactant geometry to product geometry. '''
 
   # import optimised reactants and products
-  react = xyz.fromXYZ(sys.argv[2],0)
-  prod = xyz.fromXYZ(sys.argv[3],1)
+  react = XYZfromxyzfile(sys.argv[2],0)
+  prod = XYZfromxyzfile(sys.argv[3],1)
   
   # Take shared atom names and number of atoms from reactants
   glob_nat = react.nat
@@ -300,7 +244,7 @@ if (MODE == mode_initialise):
           react.xyz[-1][ii][1] * (1.-ratio) + prod.xyz[-1][ii][1] * (ratio), \
           react.xyz[-1][ii][2] * (1.-ratio) + prod.xyz[-1][ii][2] * (ratio)]
   
-    ims[im] = xyz.fromdata(glob_at,xyzdat,ratio)
+    ims[im] = XYZ.fromdata(glob_at,xyzdat,ratio)
 
   # writeout the initial xyzs to this directory
   for im in range(0,glob_nim):
@@ -308,7 +252,7 @@ if (MODE == mode_initialise):
   
   # convert our shifted images to dat files
   for im in range(glob_nim):
-    print '-> energy pathway coordinate ', ims[im].coord
+    print '-> energy pathway coordinate ', ims[im].coord_str
     print 'writing initial dat file to ', ims[im].filenamedat
     neb_xyz2dat.fromXYZ(ims[im].filenamexyz, ims[im].filenamedat)
     #print 'duplicating onetep submission script to ', ims[im].datdir
@@ -325,9 +269,9 @@ else:
   for im in range(0,glob_nim):
     ratio = float(im)/float(glob_nim-1)
     #print ratio
-    coord = xyz.coord2str(ratio)
-    filename = coord+'/'+coord+'.xyz'
-    ims[im] = xyz.fromXYZ(filename,ratio)
+    coord_str = XYZ.float2str(ratio)
+    filename = coord_str+'/'+coord_str+'.xyz'
+    ims[im] = XYZfromxyzfile(filename,ratio)
 
   # Take shared atom names and number of atoms from reactants
   glob_nat = ims[0].nat
@@ -384,23 +328,38 @@ else:
       ims[im].applyforces(ffinal)
   
       # convert our shifted images to dat files
-      print '-> energy pathway coordinate ', ims[im].coord
+      print '-> energy pathway coordinate ', ims[im].coord_str
       print 'backing up previous dat file to ', ims[im].filenamedat+'.bak'
       copyfile(ims[im].filenamedat, \
                ims[im].filenamedat+'.bak')
       print 'writing steepest descent updated dat file to ', ims[im].filenamedat
-      neb_xyz2dat.fromdata(ims[im].at, ims[im].xyz, ims[im].filenamedat)
+      #neb_xyz2dat.fromdata(ims[im].at, ims[im].xyz, ims[im].nat, ims[im].filenamedat)
+      neb_xyz2dat.fromdata(ims[im], ims[im].filenamedat)
     
   
   elif (MODE == mode_plot):
     ''' Plot of the NEB minimisation '''
+
+    # Set backend to Agg
+    # NOTE: This will turn OFF to-screen rendering!
+    if (NO_FORWARD_X):
+      import matplotlib as mpl
+      mpl.use('Agg')
+
     import matplotlib.pyplot as plt
     from numpy import arange, concatenate, cumsum
   
     # Distances calculated using replica neighbour RMS distances, and normalised
     plt.xlabel('Minimum energy pathway coordinate')
     #plt.ylabel('Energy (a.u.)')
-    plt.ylabel('Energy (kcal/mol)')
+    if (EinkJ):
+      plt.ylabel('Energy (kJ/mol)')
+      # conversion ratio for y values (from Hartree to kJ/mol)
+      conversion_ratio = 627.509438736/0.238845896627
+    else:
+      plt.ylabel('Energy (kcal/mol)')
+      # conversion ratio for y values (from Hartree to kcal/mol)
+      conversion_ratio = 627.509438736
 
 
     # TODO: Calculate MEP coordinate by calling rmsdist() for the neighbouring replicas
@@ -430,9 +389,6 @@ else:
       x[-1] = [xval/x[-1][-1] for xval in x[-1]]
     x = x[1:]
   
-
-    # conversion ratio for y values (from Hartree to kcal/mol)
-    conversion_ratio = 627.509
 
     # iterate intermediate replicas
     y = [[0.0]]*glob_nim
@@ -464,8 +420,17 @@ else:
     # # calculate number of paths (= maximum sub-array length)
     # num_paths = max( [ len(vec) for vec in y ] ) 
 
-    # plot each path
-    for ipath in range(num_paths):
+    filename_mep = ""
+    if (PLOT_ALL):
+      # plot each path
+      plot_range = list(range(num_paths))
+      filename_mep = "mep.png"
+    else:
+      # plot final path
+      plot_range = [num_paths-1]
+      filename_mep = "mep_final.png"
+
+    for ipath in plot_range:
       # NOTE: IF THIS FAILS, CHECK THAT ALL THE CALCULATIONS WERE FINISHED 
       # CLEANLY (i.e. WITH A '<-- CG' VALUE )
       ypathmid = [ y[xx][ipath] for xx in range(1,glob_nim-1) ]
@@ -476,7 +441,7 @@ else:
   
     # plt.title('Nudged Elastic Band Minimum Energy Path')
     plt.grid(True)
-    plt.savefig("mep.png")
+    plt.savefig(filename_mep)
     plt.show()
 
   elif (MODE == mode_xyz):
