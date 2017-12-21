@@ -139,8 +139,11 @@ class XYZ:
       f.write( '{}  {:4f}  {:4f}  {:4f}\n'.format( self.at[ii], self.xyz[ixyz][ii][0], self.xyz[ixyz][ii][1], self.xyz[ixyz][ii][2] ) )
     f.close()
 
-  def writeVelo(self, ixyz=-1):
-    f = open(self.filenamevelo,'w')
+  def writeVelo(self, ixyz=-1, appendfile=False):
+    if (appendfile):
+      f = open(self.filenamevelo, 'a')
+    else:
+      f = open(self.filenamevelo, 'w')
     # header: number of atoms and comment line:
     f.write(str(self.nat)+'\nCART_VELO\n')
     # xyz data:

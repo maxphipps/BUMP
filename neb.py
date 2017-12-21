@@ -109,7 +109,7 @@ MINMODE_VV = 1
 MINMODE = MINMODE_VV
 
 # Time step/step size for optimisation
-deltat = 0.2
+deltat = 0.75
 
 # Spring constants
 SPRING_K = 1.0
@@ -297,6 +297,8 @@ if __name__ == "__main__":
             deltapos[ii][2] = 0.5 * ffinal[ii][2] * deltat**2
 
         elif (MINMODE == MINMODE_VV):
+          # Velocity verlet:
+
           # x1 = x0 + 0.5 a0 dt**2 + v0 dt 
           for ii in range(glob_nat):
             deltapos[ii][0] = 0.5 * ffinal[ii][0] * deltat**2 + ims[im].xyzvelo[-1][ii][0]*deltat
@@ -315,8 +317,7 @@ if __name__ == "__main__":
             ims[im].xyzvelo[-1][ii][2] += ffinal[ii][2] * deltat
 
           # Write the updated velocities
-          for ii in range(glob_nat):
-            ims[im].writeVelo()
+          ims[im].writeVelo(appendfile=True)
 
 
         # Add the position delta
