@@ -27,7 +27,7 @@ def main(fnameIn,nat):
 - This script is broken.\n')
 
   # Construct forces array
-  forces = [[0.0,0.0,0.0]]*nat
+  forces = [[]]*nat
   ii = 0
   for line in lines[readline:readline+nat]:
     forces_str = line.split()[3:6]

@@ -81,18 +81,16 @@ from neb_classes import XYZ
 #    self.nat = None
 
 
-def mean(arr):
-  return sum(arr)/len(arr)
-
 def secondLargest(arr):
   # Returns the second largest element of an array
   return sorted(arr, reverse=True)[1]
 
+
+
 # TODO:
-# TODO: This definition is duplicated from neb.py
+# TODO: This definition is duplicated from XYZ.readXYZ()
 # TODO:
-def getXYZdata(filename):
-  global nat
+def getXYZdata_last(filename,readVelo):
   ''' returns filename's xyz data as atdat and xyzdat arrays.
   (returns the final xyz data if more than one xyz structure is present 
   in the file.) '''
@@ -103,8 +101,8 @@ def getXYZdata(filename):
 
   # find number of XYZ structure entries in the file
   nat = int(lines[0])
-  nentries = floor( float(len(lines))/float(nat+2) )
-  print 'Reading in structure entry number ',str(int(nentries))
+  nentries = int(floor( float(len(lines))/float(nat+2) ))
+  print 'Reading in structure entry number ',str(nentries)
 
   # calculate line number the final xyz structure entry
   # begins at
@@ -122,30 +120,9 @@ def getXYZdata(filename):
     atdat[ii] = at
     ii += 1
 
-  return [atdat,xyzdat,nat]
+  #return [atdat,xyzdat,nat]
+  return XYZ.fromsinglexyzdata(atdat,xyzdat,readVelo)
 
-
-def centerXYZ(dat,cellParams):
-  # Translates the xyz to the cell center
-  # Calc. current center of xyz
-  cent_xyz = [0.0]*3
-  cent_xyz[0] = mean( [dat.xyz[-1][ii][0] for ii in range(dat.nat)] )
-  cent_xyz[1] = mean( [dat.xyz[-1][ii][1] for ii in range(dat.nat)] )
-  cent_xyz[2] = mean( [dat.xyz[-1][ii][2] for ii in range(dat.nat)] )
-
-  # Calc. cell center
-  cent_cell = [0.0]*3
-  cent_cell[0] = cellParams[0]/2.
-  cent_cell[1] = cellParams[1]/2.
-  cent_cell[2] = cellParams[2]/2.
-
-  # Apply translation vector
-  for ii in range(dat.nat):
-    dat.xyz[-1][ii][0] += (cent_cell[0] - cent_xyz[0])
-    dat.xyz[-1][ii][1] += (cent_cell[1] - cent_xyz[1])
-    dat.xyz[-1][ii][2] += (cent_cell[2] - cent_xyz[2])
-
-  return dat.xyz
 
 def getCellParams(dat,molSize):
   # Calculates the cell parameters
@@ -175,15 +152,7 @@ def calcMolSize(dat):
      - min( [dat.xyz[-1][ii][2] for ii in range(dat.nat)] ))
   return [xSize,ySize,zSize]
 
-def fromXYZ(fnameIn,fnameOut):
-  # Read xyz file
-  # Parse to XYZ object
-  # Use fromdata() method with XYZ object to create dat file
-  xyzobj = getXYZdata(fnameIn)
-
-  fromdata(xyzobj,fnameOut)
-
-def fromdata(xyzobj,fnameOut):
+def fromXYZ(xyzobj,fnameOut):
   # Use XYZ data to create dat file
 
   #print xyzobj.xyz
@@ -191,8 +160,6 @@ def fromdata(xyzobj,fnameOut):
 
   #centerXYZ(xyzobj)
 
-  # Read cellline from cell_ref.dat file
-  #cellline = read_cellref()
   # Infer cellline from xyz data
   cellParams = getCellParams(xyzobj,molSize)
 
@@ -205,15 +172,20 @@ def fromdata(xyzobj,fnameOut):
     '0.00  0.00  '+str(zmax)+'\n']
   
   # Center the xyz in the cell
-  xyz = centerXYZ(xyzobj,cellParams)
+  xyzobj.centerXYZ(cellParams)
+
+  # Get the bounding box for the system
+  #bbox = xyzobj.getboundbox()
+  # boxParams: lengths in x,y,z of bounding box
+  bboxParams = xyzobj.getboundbox_lengths()
 
   # Calculate coulomb_cutoff_radius
   # = the maximum diameter of the molecule,
   # plus twice the radius of the NGWFs, 
   # plus a little bit extra for good luck (~2Bohr)
   # TODO: This is approximated as the maximum cuboid container for the molecule
-  max1 = max(cellParams)
-  max2 = secondLargest(cellParams)
+  max1 = max(bboxParams)
+  max2 = secondLargest(bboxParams)
   coulomb_cutoff_radius = (max1*max1 + max2*max2)**0.5 + \
     + NGWF_RADII*2. \
     + BOHR2ANG*2.
@@ -221,19 +193,6 @@ def fromdata(xyzobj,fnameOut):
   main(xyzobj,cellline,coulomb_cutoff_radius,fnameOut)
 
 
-#def read_cellref():
-#  # Read ONETEP cell reference data
-#  fInCell = open('cell_ref.dat','r')
-#  cellline = ['']*3
-#  null = fInCell.readline()
-#  cellline[0] = fInCell.readline()
-#  cellline[1] = fInCell.readline()
-#  cellline[2] = fInCell.readline()
-#  fInCell.close()
-#
-#  return cellline
-  
-  
 
 def main(xyzobj,cellline,coulomb_cutoff_radius,fnameOut):
 
@@ -271,8 +230,15 @@ def main(xyzobj,cellline,coulomb_cutoff_radius,fnameOut):
   #################################################################
 
 if __name__ == "__main__":
+  # Straight conversion utility tool from .xyz to ONETEP .dat
   fnameIn = sys.argv[1]
   fnameOut = sys.argv[2]
-  fromXYZ(fnameIn,fnameOut)
+
+  # Read xyz file
+  # Parse to XYZ object
+  xyzobj = getXYZdata_last(fnameIn,readVelo=False)
+
+  # Use fromXYZ() method with XYZ object to create dat file
+  fromXYZ(xyzobj,fnameOut)
 
 
