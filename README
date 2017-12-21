@@ -67,7 +67,7 @@ Urgent:
 - Convergence criteria for the optimisation.
 - Safety check to prevent user accidentally doubly iterating using the previous forces (by calling neb.py 
   with -iter flag consecutively)
-
+- Safety check to prevent user accidentally iterating whilst calculations are incomplete
 
 Important:
 - MOAB/Torque/PBS submission script template creation and cleanup.
@@ -77,6 +77,7 @@ Important:
 Improvements:
 - Automated ONETEP input file template generation.
 - Automated backups (consider)
-- Variable resolution during optimisation: min and max ngwf_threshold_orig and cutoff_energy
+- Speedup: Variable resolution during optimisation: min and max ngwf_threshold_orig and cutoff_energy
   parameters that vary from early to late optimisation stages
+- Speedup: Option to read NGWFs and density kernel from previous iteration (and associated write)
 

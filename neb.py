@@ -109,7 +109,7 @@ MINMODE_VV = 1
 MINMODE = MINMODE_VV
 
 # Time step/step size for optimisation
-deltat = 0.75
+deltat = 0.80
 
 # Spring constants
 SPRING_K = 1.0
@@ -311,6 +311,7 @@ if __name__ == "__main__":
           # Instead, we use the set of forces associated with the previous coordinates
           # (i.e. a0, associated with x0) to update the velocities.
           # TODO: calculation of a1
+          print ims[im].xyzvelo[-1]
           for ii in range(glob_nat):
             ims[im].xyzvelo[-1][ii][0] += ffinal[ii][0] * deltat
             ims[im].xyzvelo[-1][ii][1] += ffinal[ii][1] * deltat
@@ -328,7 +329,7 @@ if __name__ == "__main__":
         print 'backing up previous dat file to ', ims[im].filenamedat+'.bak'
         copyfile(ims[im].filenamedat, \
                  ims[im].filenamedat+'.bak')
-        print 'writing steepest descent updated dat file to ', ims[im].filenamedat
+        print 'writing gradient updated dat file to ', ims[im].filenamedat
         neb_xyz2dat.fromXYZ(ims[im], ims[im].filenamedat)
       
     
@@ -344,18 +345,12 @@ if __name__ == "__main__":
       import matplotlib.pyplot as plt
       from numpy import arange, concatenate, cumsum
     
-      # Distances calculated using replica neighbour RMS distances, and normalised
-      plt.xlabel('Minimum energy pathway coordinate')
-      #plt.ylabel('Energy (a.u.)')
       if (EinkJ):
-        plt.ylabel('Energy (kJ/mol)')
         # conversion ratio for y values (from Hartree to kJ/mol)
         conversion_ratio = 627.509438736/0.238845896627
       else:
-        plt.ylabel('Energy (kcal/mol)')
         # conversion ratio for y values (from Hartree to kcal/mol)
         conversion_ratio = 627.509438736
-  
   
       # TODO: Calculate MEP coordinate by calling rmsdist() for the neighbouring replicas
       #x = arange(0.0,glob_nim,1.0)
@@ -415,8 +410,17 @@ if __name__ == "__main__":
       # # calculate number of paths (= maximum sub-array length)
       # num_paths = max( [ len(vec) for vec in y ] ) 
   
-      def plot_path():
-        # Plotting function
+      def plot_path(output=False):
+        # Energy pathway plotting function
+
+        # Distances calculated using replica neighbour RMS distances, and normalised
+        plt.xlabel('Minimum energy pathway coordinate')
+        #plt.ylabel('Energy (a.u.)')
+        if (EinkJ):
+          plt.ylabel('Energy (kJ/mol)')
+        else:
+          plt.ylabel('Energy (kcal/mol)')
+  
         for ipath in plot_range:
           # NOTE: IF THIS FAILS, CHECK THAT ALL THE CALCULATIONS WERE FINISHED 
           # CLEANLY (i.e. WITH A '<-- CG' VALUE )
@@ -425,6 +429,16 @@ if __name__ == "__main__":
           xpath = x[ipath]
           color = str(1.0-float(ipath+1)/float(num_paths+1))
           plt.plot(xpath,ypath,'x-',color=color)
+
+          # Print values to screen
+          if (output):
+            print "NEB pathway:"
+            if (EinkJ):
+              print "coord_arb energy_kj_mol"
+            else:
+              print "coord_arb energy_kcal_mol"
+            for ii in range(len(xpath)):
+              print xpath[ii], ypath[ii]
          
         # plt.title('Nudged Elastic Band Minimum Energy Path')
         plt.grid(True)
@@ -445,12 +459,12 @@ if __name__ == "__main__":
       # plot all paths
       plot_range = list(range(num_paths))
       filename_mep = "mep.png"
-      plot_path()
+      plot_path(output=False)
   
       # plot final path
       plot_range = [num_paths-1]
       filename_mep = "mep_final.png"
-      plot_path()
+      plot_path(output=True)
   
   
     elif (MODE == mode_xyz):

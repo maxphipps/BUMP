@@ -5,7 +5,9 @@
 import sys
 from math import floor
 
-#ngwf_threshold_orig : 0.000002\n\ # TMP
+# TMP
+#ngwf_threshold_orig : 0.000002\n\
+#ngwf_threshold_orig : 0.0001\n\
 
 datlines1="threads_max : 1 \n\
 maxit_palser_mano : 0 \n\
@@ -14,7 +16,7 @@ kernel_cutoff 1000 bohr\n\
 \n\
 write_forces : T\n\
 \n\
-cutoff_energy       : 600 eV\n\
+cutoff_energy       : 700 eV\n\
 ngwf_threshold_orig : 0.0001\n\
 k_zero              : 3.5\n\
 write_xyz true\n\
@@ -25,8 +27,10 @@ occ_mix 1.0\n\
 minit_lnv 10 \n\
 maxit_lnv 15 \n\
 \n\
-write_denskern F\n\
-write_tightbox_ngwfs F\n\
+read_denskern F\n\
+read_tightbox_ngwfs F\n\
+write_denskern T\n\
+write_tightbox_ngwfs T\n\
 \n\
 output_detail BRIEF\n\
 \n\
