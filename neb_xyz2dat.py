@@ -5,6 +5,8 @@
 import sys
 from math import floor
 
+#ngwf_threshold_orig : 0.000002\n\ # TMP
+
 datlines1="threads_max : 1 \n\
 maxit_palser_mano : 0 \n\
 write_density_plot : F\n\
@@ -13,7 +15,7 @@ kernel_cutoff 1000 bohr\n\
 write_forces : T\n\
 \n\
 cutoff_energy       : 600 eV\n\
-ngwf_threshold_orig : 0.000002\n\
+ngwf_threshold_orig : 0.0001\n\
 k_zero              : 3.5\n\
 write_xyz true\n\
 \n\

@@ -60,17 +60,23 @@ __TODO__
 Below is a list of TODOs:
 
 Urgent:
-- Automated ONETEP input file template generation.
-- Convergence criteria for the optimisation.
 - Automatic setting of ONETEP parameters such as XC functional, energy cutoff, cell parameters.  
   Currently these are fixed to use the PBE0 functional and a 600eV energy cutoff within neb_xyz2dat.py.
-- Automatic determination of cell size from the user's geometries (to remove cell_ref requirement)
 - Clean up of recpot usage.  Currently the user must directly mess with neb_xyz2dat.py to set 
   their pseudopotential files, which is not pretty.
+- Convergence criteria for the optimisation.
+- Safety check to prevent user accidentally doubly iterating using the previous forces (by calling neb.py 
+  with -iter flag consecutively)
+
 
 Important:
 - MOAB/Torque/PBS submission script template creation and cleanup.
 - Improve handling of ONETEP errors.  If things go wrong during a ONETEP calculation, this script's
   behaviour can easily turn weird.
 
+Improvements:
+- Automated ONETEP input file template generation.
+- Automated backups (consider)
+- Variable resolution during optimisation: min and max ngwf_threshold_orig and cutoff_energy
+  parameters that vary from early to late optimisation stages
 
