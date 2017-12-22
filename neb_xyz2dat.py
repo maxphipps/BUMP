@@ -5,7 +5,6 @@
 import sys
 from math import floor
 
-# TMP
 #ngwf_threshold_orig : 0.000002\n\
 #ngwf_threshold_orig : 0.0001\n\
 
@@ -27,8 +26,8 @@ occ_mix 1.0\n\
 minit_lnv 10 \n\
 maxit_lnv 15 \n\
 \n\
-read_denskern F\n\
-read_tightbox_ngwfs F\n\
+read_denskern T\n\
+read_tightbox_ngwfs T\n\
 write_denskern T\n\
 write_tightbox_ngwfs T\n\
 \n\
@@ -61,13 +60,13 @@ datlines3="%endblock positions_abs\n\
 \n\
 %block species\n\
 H   H   1 1 3.70426\n\
-O   O   8 4 3.70426\n\
+C   C   6 4 3.70426\n\
 %endblock species\n\
 \n\
 \n\
 %block species_pot\n\
 H   '../hpc_files/h-optgga1.recpot'\n\
-O   '../hpc_files/o-optgga1.recpot'\n\
+C   '../hpc_files/c-optgga1.recpot'\n\
 %endblock species_pot\n\
 "
 #C   C   6 4 3.70426\n\

@@ -109,7 +109,7 @@ MINMODE_VV = 1
 MINMODE = MINMODE_VV
 
 # Time step/step size for optimisation
-deltat = 0.80
+deltat = 1.00
 
 # Spring constants
 SPRING_K = 1.0
@@ -121,7 +121,7 @@ mode_plot = 2
 mode_xyz = 3
 
 # number of replicas
-glob_nim = 7
+glob_nim = 5
   
 
 def rmsdist(im1,im2,ixyz1,ixyz2):
@@ -238,7 +238,7 @@ if __name__ == "__main__":
       #print ratio
       coord_str = XYZ.float2str(ratio)
       filename = coord_str+'/'+coord_str+'.xyz'
-      ims[im] = XYZ.fromXYZ(filename,ratio)
+      ims[im] = XYZ.fromXYZ(filename,ratio,readVelo=True)
   
     # Take shared atom names and number of atoms from reactants
     glob_nat = ims[0].nat
@@ -311,11 +311,27 @@ if __name__ == "__main__":
           # Instead, we use the set of forces associated with the previous coordinates
           # (i.e. a0, associated with x0) to update the velocities.
           # TODO: calculation of a1
-          print ims[im].xyzvelo[-1]
           for ii in range(glob_nat):
-            ims[im].xyzvelo[-1][ii][0] += ffinal[ii][0] * deltat
-            ims[im].xyzvelo[-1][ii][1] += ffinal[ii][1] * deltat
-            ims[im].xyzvelo[-1][ii][2] += ffinal[ii][2] * deltat
+            # To prevent overshooting the minimum:
+            # If (velocity component * force component < 0) then we
+            # have overshot the minimum, so set velocity component to 0
+            # TODO: modify to use sign, rather than doing the full multiplication (speedup)
+            if (ims[im].xyzvelo[-1][ii][0] * ffinal[ii][0] < 0):
+              # Overshoot -> zero the velocity component
+              ims[im].xyzvelo[-1][ii][0] = 0
+            else:
+              # Add the force component to the velocity component
+              ims[im].xyzvelo[-1][ii][0] += ffinal[ii][0] * deltat
+
+            if (ims[im].xyzvelo[-1][ii][1] * ffinal[ii][1] < 0):
+              ims[im].xyzvelo[-1][ii][1] = 0
+            else:
+              ims[im].xyzvelo[-1][ii][1] += ffinal[ii][1] * deltat
+
+            if (ims[im].xyzvelo[-1][ii][2] * ffinal[ii][2] < 0):
+              ims[im].xyzvelo[-1][ii][2] = 0
+            else:
+              ims[im].xyzvelo[-1][ii][2] += ffinal[ii][2] * deltat
 
           # Write the updated velocities
           ims[im].writeVelo(appendfile=True)
