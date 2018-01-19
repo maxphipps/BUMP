@@ -5,9 +5,14 @@ NEB package: class storage
 import os
 from math import floor
 
+VERBOSE = False
+
 def mean(arr):
   return sum(arr)/len(arr)
 
+def printv(string):
+  # verbose print
+  if (VERBOSE): print(string)
 
 class XYZ:
   '''XYZ data class'''
@@ -90,7 +95,7 @@ class XYZ:
     # find number of XYZ structure entries in the file
     nat = int(lines[0])
     nentries = int(floor( float(len(lines))/float(nat+2) ))
-    print filename, '-> Reading in structures up to final entry number ',str(nentries)
+    printv(''.join([filename, '-> Reading in structures up to final entry number ',str(nentries)]))
   
     # init xyz data
     xyzdat = [[None]*nat for i in xrange(nentries)]

@@ -106,10 +106,10 @@ EinkJ = True
 # Steepest descent of velocity verlet (without half step) 
 MINMODE_SD = 0
 MINMODE_VV = 1
-MINMODE = MINMODE_VV
+MINMODE = MINMODE_SD
 
 # Time step/step size for optimisation
-deltat = 1.00
+deltat = 0.5
 
 # Spring constants
 SPRING_K = 1.0
@@ -121,7 +121,7 @@ mode_plot = 2
 mode_xyz = 3
 
 # number of replicas
-glob_nim = 5
+glob_nim = 7
   
 
 def rmsdist(im1,im2,ixyz1,ixyz2):
@@ -143,25 +143,47 @@ def tangvec(im1,im2,im3):
   r1 = im1.xyz[-1]
   r2 = im2.xyz[-1]
   r3 = im3.xyz[-1]
-  rc = [[0.0 for i in range(3)] for j in range(glob_nat)]
+  rtang = [[0.0 for i in range(3)] for j in range(glob_nat)]
   for ii in range(glob_nat):
-    # calculate ra = r1-r2 and rb = r3-r2
-    ra = [ r1[ii][xx] - r2[ii][xx] for xx in [0,1,2]]
+    # calculate vectors along the path
+    #ra = r1-r2 and rb = r3-r2
+    ra = [ r2[ii][xx] - r1[ii][xx] for xx in [0,1,2]]
     rb = [ r3[ii][xx] - r2[ii][xx] for xx in [0,1,2]]
-    #print "ra,rb:",str(rb),str(ra)
-    # bisect the vectors (=rc)
-    rc[ii] = [ (ra[xx] + rb[xx])/2. for xx in [0,1,2]]
-    # normalise the vector
-    norm = sum( [ rc[ii][xx]**2.0 for xx in [0,1,2] ] )**0.5
+
+    # normalise the vectors
+
+    norma = sum( [ ra[xx]**2.0 for xx in [0,1,2] ] )**0.5
     # divide by zero error handling:
-    if (norm == 0):
+    if (norma == 0):
       # unit vector in 1,1,1
+      print "DIV0 ERROR!"
       tmp = 1.0/(3.**0.5)
-      rc[ii] = [tmp,tmp,tmp]
+      ra = [tmp,tmp,tmp]
     else:
-      rc[ii] = [ rc[ii][xx] / norm for xx in [0,1,2] ]
-  #print "print: ",str(rc),'\n'
-  return rc
+      ra = [ ra[xx] / norma for xx in [0,1,2] ]
+
+    normb = sum( [ rb[xx]**2.0 for xx in [0,1,2] ] )**0.5
+    # divide by zero error handling:
+    if (normb == 0):
+      # unit vector in 1,1,1
+      print "DIV0 ERROR!"
+      tmp = 1.0/(3.**0.5)
+      rb = [tmp,tmp,tmp]
+    else:
+      rb = [ rb[xx] / normb for xx in [0,1,2] ]
+
+    # norm of ra+rb
+    normtang = sum( [ (ra[xx]+rb[xx])**2.0 for xx in [0,1,2] ] )**0.5
+    # divide by zero error handling:
+    if (normtang == 0):
+      # unit vector in 1,1,1
+      print "DIV0 ERROR!"
+      tmp = 1.0/(3.**0.5)
+      rtang[ii] = [tmp,tmp,tmp]
+    else:
+      rtang[ii] = [ (ra[xx]+rb[xx]) / normtang for xx in [0,1,2] ]
+
+  return rtang
 
 #########################################################################
 
@@ -272,16 +294,16 @@ if __name__ == "__main__":
           r1 = ims[im-1].xyz[-1][ii]
           r2 = ims[im].xyz[-1][ii]
           r3 = ims[im+1].xyz[-1][ii]
-          fs = [ k3*(r3[xx]-r2[xx]) - k1*(r2[xx]-r1[xx]) for xx in [0,1,2] ] 
+          fs = [ k3*(r3[xx]-r2[xx]) + k1*(r1[xx]-r2[xx]) for xx in [0,1,2] ] 
       
-          # fs: project with unit vector tangent to path
-          fsproj = [ fs[xx] * (tv[ii][xx]*tv[ii][xx]) for xx in [0,1,2] ]
+          # NEB springs: project with unit vector tangent to path
+          fsproj = [ fs[xx] * (tv[ii][xx]) for xx in [0,1,2] ]
       
-          # v: forces with projection to path tangent
-          fproj = [ fion[ii][xx] - fion[ii][xx]*(tv[ii][xx]*tv[ii][xx]) for xx in [0,1,2] ]
+          # true potential: forces with projection to path normal
+          fproj = [ fion[ii][xx] * ((tv[ii][xx]*tv[ii][xx])-1.) for xx in [0,1,2] ]
       
           # final neb forces:
-          ffinal[ii] = [ fproj[xx] + fsproj[xx] for xx in [0,1,2] ]
+          ffinal[ii] = [ -( fproj[xx] + fsproj[xx] ) for xx in [0,1,2] ]
     
         #print "FFINAL",ffinal
       
@@ -305,6 +327,25 @@ if __name__ == "__main__":
             deltapos[ii][1] = 0.5 * ffinal[ii][1] * deltat**2 + ims[im].xyzvelo[-1][ii][1]*deltat
             deltapos[ii][2] = 0.5 * ffinal[ii][2] * deltat**2 + ims[im].xyzvelo[-1][ii][2]*deltat
 
+
+          #u =  [[0.0 for i in range(3)] for j in range(glob_nat)]
+          #uF =  [[0.0 for i in range(3)] for j in range(glob_nat)]
+          #uFF = [[0.0 for i in range(3)] for j in range(glob_nat)]
+          ## uF
+          #for ii in range(glob_nat):
+          #  for xx in range(2):
+          #    u[ii*3+xx] = ims[im].xyzvelo[-1][ii][xx]
+          #    # TODO make u into unit vector
+          ## uF
+          #for ii in range(glob_nat):
+          #  for xx in range(2):
+          #    uF[ii*3+xx] = ims[im].xyzvelo[-1][ii][xx]*ffinal[ii][xx]
+          ## uFF
+          #for ii in range(glob_nat):
+          #  for xx in range(2):
+          #    uFF[ii*3+xx] = ims[im].xyzvelo[-1][ii][xx]*ffinal[ii][xx]
+            
+
           # update velocities
           # v1 = v0 + (a0+a1)/2 * dt 
           # NOTE: this is not the formal velocity verlet algo, as we do not average the forces.
@@ -316,6 +357,8 @@ if __name__ == "__main__":
             # If (velocity component * force component < 0) then we
             # have overshot the minimum, so set velocity component to 0
             # TODO: modify to use sign, rather than doing the full multiplication (speedup)
+
+
             if (ims[im].xyzvelo[-1][ii][0] * ffinal[ii][0] < 0):
               # Overshoot -> zero the velocity component
               ims[im].xyzvelo[-1][ii][0] = 0
@@ -491,7 +534,6 @@ if __name__ == "__main__":
       ims[0].writeXYZ(appendfile=False, filename='path.xyz')
       # intermediate replicas' xyz
       for im in range(1,glob_nim-1):
-        print im
         ims[im].writeXYZ(appendfile=True, ixyz=-1, filename='path.xyz')
       # product's xyz
       ims[glob_nim-1].writeXYZ(appendfile=True, filename='path.xyz')
