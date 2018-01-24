@@ -92,6 +92,8 @@ from shutil import copyfile
 from math import floor
 
 #from numpy import *
+import numpy as np
+from numpy import matrix
 
 import neb_xyz2dat
 import neb_getForces
@@ -109,10 +111,10 @@ MINMODE_VV = 1
 MINMODE = MINMODE_SD
 
 # Time step/step size for optimisation
-deltat = 0.5
+deltat = 1.2
 
 # Spring constants
-SPRING_K = 1.0
+SPRING_K = 1.0 # 0.10
 
 # mode parameters
 mode_initialise = 0
@@ -123,6 +125,9 @@ mode_xyz = 3
 # number of replicas
 glob_nim = 7
   
+def mat2arr(M):
+  # numpy utility tool
+  return np.squeeze(np.asarray(M))
 
 def rmsdist(im1,im2,ixyz1,ixyz2):
   ''' returns rms distance between two replicas '''
@@ -137,6 +142,22 @@ def rmsdist(im1,im2,ixyz1,ixyz2):
   # root mean squared 
   rms = ms**0.5
   return rms
+
+def norm_vec3(vec):
+  return sum( [ vec[xx]**2.0 for xx in [0,1,2] ] )**0.5
+
+def unit_vec3(vec):
+  norm = sum( [ vec[xx]**2.0 for xx in [0,1,2] ] )**0.5
+  # divide by zero error handling:
+  if (norm == 0):
+    # unit vector in 1,1,1
+    print "DIV0 ERROR!"
+    #tmp = 1.0/(3.**0.5)
+    tmp = 0.0
+    vec = [tmp,tmp,tmp]
+  else:
+    vec = [ vec[xx] / norm for xx in [0,1,2] ]
+  return vec
 
 def tangvec(im1,im2,im3):
   ''' returns the unit vector tangent to the path for im2 '''
@@ -157,7 +178,8 @@ def tangvec(im1,im2,im3):
     if (norma == 0):
       # unit vector in 1,1,1
       print "DIV0 ERROR!"
-      tmp = 1.0/(3.**0.5)
+      #tmp = 1.0/(3.**0.5)
+      tmp = 0.0
       ra = [tmp,tmp,tmp]
     else:
       ra = [ ra[xx] / norma for xx in [0,1,2] ]
@@ -167,7 +189,8 @@ def tangvec(im1,im2,im3):
     if (normb == 0):
       # unit vector in 1,1,1
       print "DIV0 ERROR!"
-      tmp = 1.0/(3.**0.5)
+      #tmp = 1.0/(3.**0.5)
+      tmp = 0.0
       rb = [tmp,tmp,tmp]
     else:
       rb = [ rb[xx] / normb for xx in [0,1,2] ]
@@ -178,7 +201,8 @@ def tangvec(im1,im2,im3):
     if (normtang == 0):
       # unit vector in 1,1,1
       print "DIV0 ERROR!"
-      tmp = 1.0/(3.**0.5)
+      #tmp = 1.0/(3.**0.5)
+      tmp = 0.0
       rtang[ii] = [tmp,tmp,tmp]
     else:
       rtang[ii] = [ (ra[xx]+rb[xx]) / normtang for xx in [0,1,2] ]
@@ -288,44 +312,56 @@ if __name__ == "__main__":
         # 1. calculate nudged forces
         ffinal = [[0.0 for i in range(3)] for j in range(glob_nat)]
         for ii in range(glob_nat):
+
+          # calculate path tangent unit vector projector for the atom ii
+          tv_mat = matrix(tv[ii])
+          #pprint.pprint( tv_mat )
+          tvproj = mat2arr( tv_mat.T.dot( tv_mat ) )
+          #pprint.pprint( tv_mat.T.dot( tv_mat ) )
+
           # fs: spring forces
           k3=SPRING_K
           k1=SPRING_K
           r1 = ims[im-1].xyz[-1][ii]
           r2 = ims[im].xyz[-1][ii]
           r3 = ims[im+1].xyz[-1][ii]
-          fs = [ k3*(r3[xx]-r2[xx]) + k1*(r1[xx]-r2[xx]) for xx in [0,1,2] ] 
-      
+
+          r32 = norm_vec3([r3[xx]-r2[xx] for xx in [0,1,2]])
+          r21 = norm_vec3([r2[xx]-r1[xx] for xx in [0,1,2]])
           # NEB springs: project with unit vector tangent to path
-          fsproj = [ fs[xx] * (tv[ii][xx]) for xx in [0,1,2] ]
+          fsproj = [ (k3*r32 - k1*r21) * (tv[ii][xx]) for xx in [0,1,2] ]
       
           # true potential: forces with projection to path normal
-          fproj = [ fion[ii][xx] * ((tv[ii][xx]*tv[ii][xx])-1.) for xx in [0,1,2] ]
+          fprojdottt = [ sum(fion[ii][kk] * tvproj[kk][xx] for kk in [0,1,2]) for xx in [0,1,2]] 
+          fproj = [ fion[ii][xx] - fprojdottt[xx] for xx in [0,1,2] ]
+          #fproj = [ fion[ii][xx] * (1.-(tv[ii][xx])) for xx in [0,1,2] ] # ORIGINAL
       
           # final neb forces:
-          ffinal[ii] = [ -( fproj[xx] + fsproj[xx] ) for xx in [0,1,2] ]
+          ffinal[ii] = [ ( fproj[xx] + fsproj[xx] ) for xx in [0,1,2] ]
+	  print ffinal[ii]
     
         #print "FFINAL",ffinal
+        print "FFINAL AV im=", im, ((sum(ffinal[0])+sum(ffinal[1])+sum(ffinal[2]))/(3*len(ffinal)))
       
 
-        deltapos = [[0.0 for i in range(3)] for j in range(glob_nat)]
+        deltapos = [[[0.0 for i in range(3)] for j in range(glob_nat)] for k in range(glob_nim)]
 
         # 2. apply nudged forces
         if (MINMODE == MINMODE_SD):
           # Scale forces by timestep -> deltapos = 0.5*a0*dt**2
           for ii in range(glob_nat):
-            deltapos[ii][0] = 0.5 * ffinal[ii][0] * deltat**2
-            deltapos[ii][1] = 0.5 * ffinal[ii][1] * deltat**2
-            deltapos[ii][2] = 0.5 * ffinal[ii][2] * deltat**2
+            deltapos[im][ii][0] = 0.5 * ffinal[ii][0] * deltat**2
+            deltapos[im][ii][1] = 0.5 * ffinal[ii][1] * deltat**2
+            deltapos[im][ii][2] = 0.5 * ffinal[ii][2] * deltat**2
 
         elif (MINMODE == MINMODE_VV):
           # Velocity verlet:
 
           # x1 = x0 + 0.5 a0 dt**2 + v0 dt 
           for ii in range(glob_nat):
-            deltapos[ii][0] = 0.5 * ffinal[ii][0] * deltat**2 + ims[im].xyzvelo[-1][ii][0]*deltat
-            deltapos[ii][1] = 0.5 * ffinal[ii][1] * deltat**2 + ims[im].xyzvelo[-1][ii][1]*deltat
-            deltapos[ii][2] = 0.5 * ffinal[ii][2] * deltat**2 + ims[im].xyzvelo[-1][ii][2]*deltat
+            deltapos[im][ii][0] = 0.5 * ffinal[ii][0] * deltat**2 + ims[im].xyzvelo[-1][ii][0]*deltat
+            deltapos[im][ii][1] = 0.5 * ffinal[ii][1] * deltat**2 + ims[im].xyzvelo[-1][ii][1]*deltat
+            deltapos[im][ii][2] = 0.5 * ffinal[ii][2] * deltat**2 + ims[im].xyzvelo[-1][ii][2]*deltat
 
 
           #u =  [[0.0 for i in range(3)] for j in range(glob_nat)]
@@ -379,9 +415,10 @@ if __name__ == "__main__":
           # Write the updated velocities
           ims[im].writeVelo(appendfile=True)
 
+      for im in range(1,glob_nim-1):
 
         # Add the position delta
-        ims[im].applypositionchange(deltapos)
+        ims[im].applypositionchange(deltapos[im])
     
         # convert our shifted images to dat files
         print '-> energy pathway coordinate ', ims[im].coord_str
