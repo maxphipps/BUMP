@@ -111,7 +111,7 @@ MINMODE_VV = 1
 MINMODE = MINMODE_SD
 
 # Time step/step size for optimisation
-deltat = 1.2
+deltat = 1.6
 
 # Spring constants
 SPRING_K = 1.0 # 0.10
@@ -308,6 +308,8 @@ if __name__ == "__main__":
     
         # calculate path tangent unit vectors
         tv = tangvec(ims[im-1], ims[im], ims[im+1])
+
+        deltapos = [[[0.0 for i in range(3)] for j in range(glob_nat)] for k in range(glob_nim)]
         
         # 1. calculate nudged forces
         ffinal = [[0.0 for i in range(3)] for j in range(glob_nat)]
@@ -343,8 +345,6 @@ if __name__ == "__main__":
         #print "FFINAL",ffinal
         print "FFINAL AV im=", im, ((sum(ffinal[0])+sum(ffinal[1])+sum(ffinal[2]))/(3*len(ffinal)))
       
-
-        deltapos = [[[0.0 for i in range(3)] for j in range(glob_nat)] for k in range(glob_nim)]
 
         # 2. apply nudged forces
         if (MINMODE == MINMODE_SD):
