@@ -80,7 +80,7 @@ class XYZ:
       self.xyz[-1][ii][0] += deltapos[ii][0]
       self.xyz[-1][ii][1] += deltapos[ii][1]
       self.xyz[-1][ii][2] += deltapos[ii][2]
-      #print self.xyz[ii][0]
+      #print self.xyz[-1][ii][0]
 
   @classmethod
   def readXYZdata(self,filename):

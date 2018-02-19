@@ -157,7 +157,7 @@ def calcMolSize(dat):
      - min( [dat.xyz[-1][ii][2] for ii in range(dat.nat)] ))
   return [xSize,ySize,zSize]
 
-def fromXYZ(xyzobj,fnameOut):
+def fromXYZ(xyzobj,fnameOut, center=False):
   # Use XYZ data to create dat file
 
   #print xyzobj.xyz
@@ -177,7 +177,8 @@ def fromXYZ(xyzobj,fnameOut):
     '0.00  0.00  '+str(zmax)+'\n']
   
   # Center the xyz in the cell
-  xyzobj.centerXYZ(cellParams)
+  if (center):
+    xyzobj.centerXYZ(cellParams)
 
   # Get the bounding box for the system
   #bbox = xyzobj.getboundbox()
@@ -244,6 +245,6 @@ if __name__ == "__main__":
   xyzobj = getXYZdata_last(fnameIn,readVelo=False)
 
   # Use fromXYZ() method with XYZ object to create dat file
-  fromXYZ(xyzobj,fnameOut)
+  fromXYZ(xyzobj,fnameOut, center=True)
 
 

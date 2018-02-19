@@ -111,7 +111,7 @@ MINMODE_VV = 1
 MINMODE = MINMODE_SD
 
 # Time step/step size for optimisation
-deltat = 1.6
+deltat = 1.4
 
 # Spring constants
 SPRING_K = 1.0 # 0.10
@@ -206,6 +206,12 @@ def tangvec(im1,im2,im3):
       rtang[ii] = [tmp,tmp,tmp]
     else:
       rtang[ii] = [ (ra[xx]+rb[xx]) / normtang for xx in [0,1,2] ]
+
+    ##print norma, normb
+    #print "RB:", rb
+    #print im2.coord_val, im3.coord_val
+    ##print [ (ra[xx]+rb[xx])**2.0 for xx in [0,1,2] ]
+    ##print normtang
 
   return rtang
 
@@ -340,10 +346,11 @@ if __name__ == "__main__":
       
           # final neb forces:
           ffinal[ii] = [ ( fproj[xx] + fsproj[xx] ) for xx in [0,1,2] ]
-	  print ffinal[ii]
+	  #print "TEST IM",im, ffinal[ii]
+	  #print "TEST IM",im, tv[ii][:]
     
         #print "FFINAL",ffinal
-        print "FFINAL AV im=", im, ((sum(ffinal[0])+sum(ffinal[1])+sum(ffinal[2]))/(3*len(ffinal)))
+        #print "FFINAL AV im=", im, ((sum(ffinal[0])+sum(ffinal[1])+sum(ffinal[2]))/(3*len(ffinal)))
       
 
         # 2. apply nudged forces
@@ -353,6 +360,7 @@ if __name__ == "__main__":
             deltapos[im][ii][0] = 0.5 * ffinal[ii][0] * deltat**2
             deltapos[im][ii][1] = 0.5 * ffinal[ii][1] * deltat**2
             deltapos[im][ii][2] = 0.5 * ffinal[ii][2] * deltat**2
+            #print "DELTAPOS IM ", im, deltapos[im][ii]
 
         elif (MINMODE == MINMODE_VV):
           # Velocity verlet:
