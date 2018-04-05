@@ -111,7 +111,7 @@ MINMODE_VV = 1
 MINMODE = MINMODE_SD
 
 # Time step/step size for optimisation
-deltat = 0.7
+deltat = 1.2
 
 # Spring constants
 SPRING_K = 1.0 # 0.10
@@ -353,7 +353,7 @@ if __name__ == "__main__":
           ffinal[ii] = [ ( fproj[xx] + fsproj[xx] ) for xx in [0,1,2] ]
 	  #print "TEST IM",im, map(prettyfloat,ffinal[ii][:]), map(prettyfloat,tv[ii][:])
 	  #print "TEST IM",im, map(prettyfloat,ffinal[ii][:]), map(prettyfloat,fproj[:]), map(prettyfloat,fsproj[:])
-	  print "TEST IM",im, map(prettyfloat,ffinal[ii][:]), map(prettyfloat,fion[ii][:]), map(prettyfloat,fprojdottt[:])
+	  #print "TEST IM",im, map(prettyfloat,ffinal[ii][:]), map(prettyfloat,fion[ii][:]), map(prettyfloat,fprojdottt[:])
 	  #print "TEST IM",im, tv[ii][:]
     
         #print "FFINAL",ffinal
@@ -374,9 +374,9 @@ if __name__ == "__main__":
 
           # x1 = x0 + 0.5 a0 dt**2 + v0 dt 
           for ii in range(glob_nat):
-            deltapos[im][ii][0] = 0.5 * ffinal[ii][0] * deltat**2 + ims[im].xyzvelo[-1][ii][0]*deltat
-            deltapos[im][ii][1] = 0.5 * ffinal[ii][1] * deltat**2 + ims[im].xyzvelo[-1][ii][1]*deltat
-            deltapos[im][ii][2] = 0.5 * ffinal[ii][2] * deltat**2 + ims[im].xyzvelo[-1][ii][2]*deltat
+            deltapos[im][ii][0] = 0.5 * ffinal[ii][0] * deltat**2 - ims[im].xyzvelo[-1][ii][0]*deltat
+            deltapos[im][ii][1] = 0.5 * ffinal[ii][1] * deltat**2 - ims[im].xyzvelo[-1][ii][1]*deltat
+            deltapos[im][ii][2] = 0.5 * ffinal[ii][2] * deltat**2 - ims[im].xyzvelo[-1][ii][2]*deltat
 
 
           #u =  [[0.0 for i in range(3)] for j in range(glob_nat)]
