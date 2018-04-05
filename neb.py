@@ -100,7 +100,7 @@ import neb_getForces
 from neb_classes import XYZ
 
 # Debug flags
-NO_FORWARD_X = True
+NO_FORWARD_X = False # True
 
 # Energy in kJ/mol or kcal/mol
 EinkJ = True
@@ -111,7 +111,7 @@ MINMODE_VV = 1
 MINMODE = MINMODE_SD
 
 # Time step/step size for optimisation
-deltat = 1.4
+deltat = 0.7
 
 # Spring constants
 SPRING_K = 1.0 # 0.10
@@ -123,8 +123,13 @@ mode_plot = 2
 mode_xyz = 3
 
 # number of replicas
-glob_nim = 7
+glob_nim = 5
   
+class prettyfloat(float):
+  def __repr__(self):
+    return "%0.1f" % self
+    #return "%0.2f" % self
+
 def mat2arr(M):
   # numpy utility tool
   return np.squeeze(np.asarray(M))
@@ -300,6 +305,8 @@ if __name__ == "__main__":
       ''' Iterate a NEB optimisation step by extracting the forces from
       the previous singlepoint forces calculation for each replica and 
       taking a minimisation step of the ion coordinates. '''
+
+      deltapos = [[[0.0 for i in range(3)] for j in range(glob_nat)] for k in range(glob_nim)]
   
       # for each replica,
       # calculate and apply nudged forces
@@ -315,8 +322,6 @@ if __name__ == "__main__":
         # calculate path tangent unit vectors
         tv = tangvec(ims[im-1], ims[im], ims[im+1])
 
-        deltapos = [[[0.0 for i in range(3)] for j in range(glob_nat)] for k in range(glob_nim)]
-        
         # 1. calculate nudged forces
         ffinal = [[0.0 for i in range(3)] for j in range(glob_nat)]
         for ii in range(glob_nat):
@@ -346,7 +351,9 @@ if __name__ == "__main__":
       
           # final neb forces:
           ffinal[ii] = [ ( fproj[xx] + fsproj[xx] ) for xx in [0,1,2] ]
-	  #print "TEST IM",im, ffinal[ii]
+	  #print "TEST IM",im, map(prettyfloat,ffinal[ii][:]), map(prettyfloat,tv[ii][:])
+	  #print "TEST IM",im, map(prettyfloat,ffinal[ii][:]), map(prettyfloat,fproj[:]), map(prettyfloat,fsproj[:])
+	  print "TEST IM",im, map(prettyfloat,ffinal[ii][:]), map(prettyfloat,fion[ii][:]), map(prettyfloat,fprojdottt[:])
 	  #print "TEST IM",im, tv[ii][:]
     
         #print "FFINAL",ffinal
@@ -360,7 +367,7 @@ if __name__ == "__main__":
             deltapos[im][ii][0] = 0.5 * ffinal[ii][0] * deltat**2
             deltapos[im][ii][1] = 0.5 * ffinal[ii][1] * deltat**2
             deltapos[im][ii][2] = 0.5 * ffinal[ii][2] * deltat**2
-            #print "DELTAPOS IM ", im, deltapos[im][ii]
+            #print "DELTAPOS IM ", im, " AT ", ii, "=", deltapos[im][ii]
 
         elif (MINMODE == MINMODE_VV):
           # Velocity verlet:
@@ -423,7 +430,12 @@ if __name__ == "__main__":
           # Write the updated velocities
           ims[im].writeVelo(appendfile=True)
 
+      #print "--C-H-E-C-K-I-N-G--" # DEBUG
+
       for im in range(1,glob_nim-1):
+
+        #for ii in range(glob_nat): # DEBUG
+        #  print "DELTAPOS IM ", im, " AT ", ii, "=", deltapos[im][ii] # DEBUG
 
         # Add the position delta
         ims[im].applypositionchange(deltapos[im])
