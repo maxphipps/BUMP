@@ -60,13 +60,13 @@ datlines3="%endblock positions_abs\n\
 \n\
 %block species\n\
 H   H   1 1 3.70426\n\
-O   O   8 4 3.70426\n\
+C   C   6 4 3.70426\n\
 %endblock species\n\
 \n\
 \n\
 %block species_pot\n\
 H   '../hpc_files/h-optgga1.recpot'\n\
-O   '../hpc_files/o-optgga1.recpot'\n\
+C   '../hpc_files/c-optgga1.recpot'\n\
 %endblock species_pot\n\
 "
 #C   C   6 4 3.70426\n\

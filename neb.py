@@ -524,10 +524,16 @@ if __name__ == "__main__":
           plt.ylabel('Energy (kJ/mol)')
         else:
           plt.ylabel('Energy (kcal/mol)')
-  
+ 
+	## DEBUG: Print number of energies contained in the outputs for each bead
+        #for xx in range(1,glob_nim-1):
+        #  print "! ", xx, len(y[xx])
+        #print "MIN n(E): ", min( [len(y[xx]) for xx in range(1,glob_nim-1)] )
+
         for ipath in plot_range:
           # NOTE: IF THIS FAILS, CHECK THAT ALL THE CALCULATIONS WERE FINISHED 
           # CLEANLY (i.e. WITH A '<-- CG' VALUE )
+          print ipath
           ypathmid = [ y[xx][ipath] for xx in range(1,glob_nim-1) ]
           ypath = concatenate((y[0],ypathmid,y[-1]))
           xpath = x[ipath]
@@ -559,14 +565,26 @@ if __name__ == "__main__":
       #  # plot final path
       #  plot_range = [num_paths-1]
       #  filename_mep = "mep_final.png"
+
+      # check that number of energies found in outputs is
+      # in agreement with number of paths in the xyz files
+      min_number_energies_found = min( [len(y[xx]) for xx in range(1,glob_nim-1)] )
+      if min_number_energies_found <> num_paths:
+        sys.exit(''.join(["Number of paths and number of energies found do not match! Aborting!\n\
+ Minimum number of energies found (grep <-- CG */*out) = ", str(min_number_energies_found), "\n\
+ Number of paths found (using bead #1 as reference)    = ", str(num_paths)]))
+
       
       # plot all paths
+      print "NUM_PATHS",num_paths
       plot_range = list(range(num_paths))
+      print "PLOT_RANGE", plot_range
       filename_mep = "mep.png"
       plot_path(output=False)
   
       # plot final path
       plot_range = [num_paths-1]
+      print "PLOT_RANGE", plot_range
       filename_mep = "mep_final.png"
       plot_path(output=True)
   
